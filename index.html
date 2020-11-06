@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>ARC - Fusion Sim</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-1"></div>
+            <div class="col-sm-2">
+                <form>
+                    <hr/>
+                    <hr/>
+                    <center>
+                        <h2>Fusion Sim</h2>
+                    </center>
+                    <hr/>
+                    <center>
+                        <button id="start_button" type="button" onclick="start();">Start</button>
+                        <button id="pause_button" type="button" onclick="stop();">Stop</button>
+                    </center>
+                    <hr/>
+                    <center>
+                        <button id="pp_chain_button" type="button" onclick="pp_chain();">3-Chain 2-Body</button>
+                        <button id="cno_chain_button" type="button" onclick="cno_chain();">2-Chain 3-Body</button>
+                    </center>
+                    <hr/>
+                    <p>
+                        <center><b>Temperature</b></center><input id="temp_input" type="range" class="slider" min="1000" max="10000" value="2000" /></p>
+                    <p><span style="color:transparent">.</span></p>
+                    <hr/>
+                    <p>Tick Interval<input id="tick_interval_input" type="number" min="1" max="1000" value="10" step="1" /></p>
+                    <p>Interaction Range<input id="interaction_range_input" type="number" min="1" max="1000" value="20" step="1" /></p>
+                    <hr/>
+                    <p>Proton Production<input id="proton_production_input" type="number" min="0" max="1000" value="10" step="1" /></p>
+                    <p>Deuterium Production<input id="deuterium_production_input" type="number" min="0" max="1000" value="0" step="1" /></p>
+                    <p>Helium Production<input id="helium_production_input" type="number" min="0" max="1000" value="0" step="1" /></p>
+                    <p>Carbon Production<input id="carbon_production_input" type="number" min="0" max="1000" value="0" step="1" /></p>
+                    <hr/>
+                    <p>Deuterium Fusion<input type="radio" id="deuterium_fusion_false_input" name="deuterium_fusion_radio" value="false" /><text style="float:right"><a style="color:transparent">:</a> Off <a style="color:transparent">:</a></text><input type="radio"
+                            id="deuterium_fusion_true_input" name="deuterium_fusion_radio" value="true" checked/><text style="float:right">On <a style="color:transparent">:</a> </text></p>
+                    <p>Helium Fusion<input type="radio" id="helium_fusion_false_input" name="helium_fusion_radio" value="false" /><text style="float:right"><a style="color:transparent">:</a> Off <a style="color:transparent">:</a></text><input type="radio"
+                            id="helium_fusion_true_input" name="helium_fusion_radio" value="true" checked/><text style="float:right">On <a style="color:transparent">:</a> </text></p>
+                    <p>Carbom Fusion<input type="radio" id="carbon_fusion_false_input" name="carbon_fusion_radio" value="false" checked /><text style="float:right"><a style="color:transparent">:</a> Off <a style="color:transparent">:</a></text><input type="radio"
+                            id="carbon_fusion_true_input" name="carbon_fusion_radio" value="true" /><text style="float:right">On <a style="color:transparent">:</a> </text></p>
+                    <hr/>
+                    <p>Target Proton Rate<input id="target_proton_rate_input" type="number" min="0" max="10000" value="100" step="1" /></p>
+                    <p>Target Deuterium Rate<input id="target_deuterium_rate_input" type="number" min="0" max="10000" value="100" step="1" /></p>
+                    <p>Target Helium Rate<input id="target_helium_rate_input" type="number" min="0" max="10000" value="100" step="1" /></p>
+                    <p>Target Carbon Rate<input id="target_carbon_rate_input" type="number" min="0" max="10000" value="100" step="1" /></p>
+                    <hr/>
+                </form>
+                This is a toy model intended to illustrate the effect of temperature on the fusion reaction rates within stars. Is not intended to be a physically accurate representation of the pp-chain or cno-cycle.
+                <hr/>
+            </div>
+            <div class="col-sm-6">
+                <hr/>
+                <canvas id="foreground_canvas" width="600" height="600"></canvas>
+                <hr/>
+            </div>
+            <div class="col-sm-2">
+                <hr/>
+                <center>Proton</center>
+                <p style="text-align:right"><span style="float:left">Total:</span><span id="num_proton_text">#</span></p>
+                <p style="text-align:right"><span style="float:left">Rate:</span><span id="rate_proton_text">#</span></p>
+                <p style="text-align:right"><span style="float:left" id="proton_target_text">Ticks to reach #:</span><span id="target_proton_text">#</span></p>
+                <hr/>
+                <center>Deuterium</center>
+                <p style="text-align:right"><span style="float:left">Total:</span><span id="num_deuterium_text">#</span></p>
+                <p style="text-align:right"><span style="float:left">Rate:</span><span id="rate_deuterium_text">#</span></p>
+                <p style="text-align:right"><span style="float:left" id="deuterium_target_text">Ticks to reach #:</span><span id="target_deuterium_text">#</span></p>
+                <hr/>
+                <center>Helium</center>
+                <p style="text-align:right"><span style="float:left">Total</span><span id="num_helium_text">#</span></p>
+                <p style="text-align:right"><span style="float:left">Rate:</span><span id="rate_helium_text">#</span></p>
+                <p style="text-align:right"><span style="float:left" id="helium_target_text">Ticks to reach #:</span><span id="target_helium_text">#</span></p>
+                <hr/>
+                <center>Carbon</center>
+                <p style="text-align:right"><span style="float:left">Total</span><span id="num_carbon_text">#</span></p>
+                <p style="text-align:right"><span style="float:left">Rate:</span><span id="rate_carbon_text">#</span></p>
+                <p style="text-align:right"><span style="float:left" id="carbon_target_text">Ticks to reach #:</span><span id="target_carbon_text">#</span></p>
+                <hr/>
+                <canvas id="graph_canvas" width="200" height="214"></canvas>
+                <hr/>
+            </div>
+            <div class="col-sm-1"></div>
+        </div>
+    </div>
+</body>
+
+<script>
+    //  Canvases
+    var fg = document.getElementById("foreground_canvas");
+    var graph = document.getElementById("graph_canvas");
+    graph.getContext("2d").lineWidth = 3;
+
+    //  Simulation
+    var sim;
+    var paused;
+    var num_tick;
+
+    var proton_tick;
+    var deuterium_tick;
+    var helium_tick;
+    var carbon_tick;
+
+    //  Global Variables
+    var temp;
+    var temp_min = Number(document.getElementById("temp_input").min);
+    var temp_max = Number(document.getElementById("temp_input").max);
+    var temp_range = temp_max - temp_min;
+    var tick_interval;
+    var interaction_range_squared;
+
+    //  Data
+    var proton = [];
+    var proton_colour = '#900';
+    var proton_rad = 0.003;
+    var proton_count = [];
+    var deuterium = [];
+    var deuterium_colour = '#009';
+    var deuterium_rad = 0.005;
+    var deuterium_count = [];
+    var helium = [];
+    var helium_colour = '#090';
+    var helium_rad = 0.009;
+    var helium_count = [];
+    var carbon = [];
+    var carbon_colour = '#333';
+    var carbon_rad = 0.011;
+    var carbon_count = [];
+
+    var proton_max;
+    var deuterium_max;
+    var helium_max;
+    var carbon_max;
+
+    var target_proton_count;
+    var target_deuterium_count;
+    var target_helium_count;
+    var target_carbon_count;
+
+    function pp_chain() {
+        stop();
+
+        document.getElementById("proton_production_input").value = 10;
+        document.getElementById("deuterium_production_input").value = 0;
+        document.getElementById("helium_production_input").value = 0;
+        document.getElementById("carbon_production_input").value = 0;
+
+        document.getElementById("deuterium_fusion_true_input").checked = true;
+        document.getElementById("helium_fusion_true_input").checked = true;
+        document.getElementById("carbon_fusion_true_input").checked = false;
+        document.getElementById("deuterium_fusion_false_input").checked = false;
+        document.getElementById("helium_fusion_false_input").checked = false;
+        document.getElementById("carbon_fusion_false_input").checked = true;
+    }
+
+    function cno_chain() {
+        stop();
+
+        document.getElementById("proton_production_input").value = 0;
+        document.getElementById("deuterium_production_input").value = 0;
+        document.getElementById("helium_production_input").value = 10;
+        document.getElementById("carbon_production_input").value = 0;
+
+        document.getElementById("deuterium_fusion_true_input").checked = false;
+        document.getElementById("helium_fusion_true_input").checked = false;
+        document.getElementById("carbon_fusion_true_input").checked = true;
+        document.getElementById("deuterium_fusion_false_input").checked = true;
+        document.getElementById("helium_fusion_false_input").checked = true;
+        document.getElementById("carbon_fusion_false_input").checked = false;
+    }
+
+
+    //  Drawing
+    function draw_line(canvas, x0, y0, x1, y1, colour, line_width) {
+        x0 *= canvas.width;
+        x1 *= canvas.width;
+        y0 = 1.0 - y0;
+        y1 = 1.0 - y1;
+        y0 *= canvas.height;
+        y1 *= canvas.height;
+
+        var ctx = canvas.getContext("2d");
+        ctx.strokeStyle = colour;
+        ctx.lineStyle = colour;
+        ctx.lineWidth = line_width;
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+    }
+
+    function draw_circ(canvas, x, y, r, colour) {
+        x *= canvas.width;
+        y = 1.0 - y;
+        y *= canvas.height;
+        r *= canvas.width;
+
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = colour;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    function clear_canvas(canvas) {
+        canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+
+    //  Simulation control
+    function start() {
+        clearInterval(sim);
+
+        tick_interval = Number(document.getElementById("tick_interval_input").value);
+
+        proton_count = Array.apply(null, Array(100)).map(Number.prototype.valueOf, 0);
+        deuterium_count = Array.apply(null, Array(100)).map(Number.prototype.valueOf, 0);
+        helium_count = Array.apply(null, Array(100)).map(Number.prototype.valueOf, 0);
+        carbon_count = Array.apply(null, Array(100)).map(Number.prototype.valueOf, 0);
+
+        sim = setInterval(tick, tick_interval);
+
+        num_tick = 0;
+
+        proton_tick = -1;
+        deuterium_tick = -1;
+        helium_tick = -1;
+        carbon_tick = -1;
+
+        target_proton_count = Number(document.getElementById("target_proton_rate_input").value);
+        target_deuterium_count = Number(document.getElementById("target_deuterium_rate_input").value);
+        target_helium_count = Number(document.getElementById("target_helium_rate_input").value);
+        target_carbon_count = Number(document.getElementById("target_carbon_rate_input").value);
+
+        document.getElementById("target_proton_text").innerHTML = "#";
+        document.getElementById("target_deuterium_text").innerHTML = "#";
+        document.getElementById("target_helium_text").innerHTML = "#";
+        document.getElementById("target_carbon_text").innerHTML = "#";
+
+        document.getElementById("proton_target_text").innerHTML = "Ticks to reach " + target_proton_count + ":";
+        document.getElementById("deuterium_target_text").innerHTML = "Ticks to reach " + target_deuterium_count + ":";
+        document.getElementById("helium_target_text").innerHTML = "Ticks to reach " + target_helium_count + ":";
+        document.getElementById("carbon_target_text").innerHTML = "Ticks to reach " + target_carbon_count + ":";
+    }
+
+    function stop() {
+        console.log("clear");
+
+        clearInterval(sim);
+
+        proton = [];
+        deuterium = [];
+        helium = [];
+        carbon = [];
+
+        proton_count = [];
+        deuterium_count = [];
+        helium_count = [];
+        carbon_count = [];
+    }
+
+    function rgb(r, g, b) {
+        return ["rgba(", r, ",", g, ",", b, ",", 0.1, ")"].join("");
+    }
+
+    function tick() {
+        var t = (Number(document.getElementById("temp_input").value) - temp_min) / temp_range;
+        t *= 255;
+        t = Math.floor(t);
+        document.getElementById("foreground_canvas").style.background = rgb(t, 0, 255 - t);
+
+        interaction_range_squared = Number(document.getElementById("interaction_range_input").value) * (0.1 + ((Number(document.getElementById("temp_input").value) - temp_min) / temp_range));
+        interaction_range_squared *= 1E-2;
+        interaction_range_squared = interaction_range_squared * interaction_range_squared;
+
+        generate_new_particles();
+
+        collide_particles();
+
+        move_particles();
+        count_particles();
+
+        clear_canvas(fg);
+        draw_particles();
+
+        draw_graph();
+
+        ++num_tick;
+    }
+
+    function draw_graph() {
+        clear_canvas(graph);
+
+        var total_lines = proton_count.length - 1;
+        var dx = 1.0 / total_lines;
+
+        proton_max = Math.max(...proton_count);
+        deuterium_max = Math.max(...deuterium_count);
+        helium_max = Math.max(...helium_count);
+        carbon_max = Math.max(...carbon_count);
+
+        var graph_max = 0;
+        if (proton_max > graph_max) {
+            graph_max = proton_max;
+        }
+        if (deuterium_max > graph_max) {
+            graph_max = deuterium_max;
+        }
+        if (helium_max > graph_max) {
+            graph_max = helium_max;
+        }
+        if (carbon_max > graph_max) {
+            graph_max = carbon_max;
+        }
+
+        for (i = 0; i < total_lines; ++i) {
+            var x0 = i * dx;
+            var x1 = x0 + dx;
+            var y0 = proton_count[i] / (graph_max);
+            var y1 = proton_count[i + 1] / (graph_max);
+            draw_line(graph, x0, y0, x1, y1, proton_colour);
+        }
+        for (i = 0; i < total_lines; ++i) {
+            var x0 = i * dx;
+            var x1 = x0 + dx;
+            var y0 = deuterium_count[i] / (graph_max);
+            var y1 = deuterium_count[i + 1] / (graph_max);
+            draw_line(graph, x0, y0, x1, y1, deuterium_colour);
+        }
+        for (i = 0; i < total_lines; ++i) {
+            var x0 = i * dx;
+            var x1 = x0 + dx;
+            var y0 = helium_count[i] / (graph_max);
+            var y1 = helium_count[i + 1] / (graph_max);
+            draw_line(graph, x0, y0, x1, y1, helium_colour);
+        }
+        for (i = 0; i < total_lines; ++i) {
+            var x0 = i * dx;
+            var x1 = x0 + dx;
+            var y0 = carbon_count[i] / (graph_max);
+            var y1 = carbon_count[i + 1] / (graph_max);
+            draw_line(graph, x0, y0, x1, y1, carbon_colour);
+        }
+    }
+
+    function draw_particles() {
+        for (i = 0; i < proton.length; ++i) {
+            draw_circ(fg, proton[i].x_pos, proton[i].y_pos, proton_rad * 1.25, "black");
+            draw_circ(fg, proton[i].x_pos, proton[i].y_pos, proton_rad, proton_colour);
+        }
+        for (i = 0; i < deuterium.length; ++i) {
+            draw_circ(fg, deuterium[i].x_pos, deuterium[i].y_pos, deuterium_rad * 1.25, "black");
+            draw_circ(fg, deuterium[i].x_pos, deuterium[i].y_pos, deuterium_rad, deuterium_colour);
+        }
+        for (i = 0; i < helium.length; ++i) {
+            draw_circ(fg, helium[i].x_pos, helium[i].y_pos, helium_rad * 1.25, "black");
+            draw_circ(fg, helium[i].x_pos, helium[i].y_pos, helium_rad, helium_colour);
+        }
+        for (i = 0; i < carbon.length; ++i) {
+            draw_circ(fg, carbon[i].x_pos, carbon[i].y_pos, carbon_rad * 1.25, "black");
+            draw_circ(fg, carbon[i].x_pos, carbon[i].y_pos, carbon_rad, carbon_colour);
+        }
+    }
+
+    function collide_particles() {
+        if (document.getElementById("deuterium_fusion_true_input").checked) {
+            for (i = 0; i < proton.length; ++i) {
+                for (j = 0; j < proton.length; ++j) {
+                    if (i == j) {
+                        continue;
+                    }
+
+                    if ((Math.abs(proton[i].x_pos - proton[j].x_pos) + Math.abs(proton[i].y_pos - proton[j].y_pos)) <= interaction_range_squared) {
+                        deuterium.push({
+                            x_pos: (proton[i].x_pos + proton[j].x_pos) / 2.0,
+                            y_pos: (proton[i].y_pos + proton[j].y_pos) / 2.0,
+                            x_vel: (proton[i].x_vel + proton[j].x_vel) / 2.0,
+                            y_vel: (proton[i].y_vel + proton[j].y_vel) / 2.0
+                        });
+
+                        proton.splice(i, 1);
+                        proton.splice(j - 1, 1);
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (document.getElementById("helium_fusion_true_input").checked) {
+            for (i = 0; i < deuterium.length; ++i) {
+                for (j = 0; j < deuterium.length; ++j) {
+                    if (i == j) {
+                        continue;
+                    }
+
+                    if ((Math.abs(deuterium[i].x_pos - deuterium[j].x_pos) + Math.abs(deuterium[i].y_pos - deuterium[j].y_pos)) <= interaction_range_squared) {
+                        helium.push({
+                            x_pos: (deuterium[i].x_pos + deuterium[j].x_pos) / 2.0,
+                            y_pos: (deuterium[i].y_pos + deuterium[j].y_pos) / 2.0,
+                            x_vel: (deuterium[i].x_vel + deuterium[j].x_vel) / 2.0,
+                            y_vel: (deuterium[i].y_vel + deuterium[j].y_vel) / 2.0
+                        });
+
+                        deuterium.splice(i, 1);
+                        deuterium.splice(j - 1, 1);
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (document.getElementById("carbon_fusion_true_input").checked) {
+            for (i = 0; i < helium.length; ++i) {
+                for (j = 0; j < helium.length; ++j) {
+                    if (i == j) {
+                        continue;
+                    }
+
+                    if ((Math.abs(helium[i].x_pos - helium[j].x_pos) + Math.abs(helium[i].y_pos - helium[j].y_pos)) <= interaction_range_squared) {
+
+                        for (k = 0; k < helium.length; ++k) {
+                            if ((k == i) || (k == j)) {
+                                continue;
+                            }
+
+                            ij = (Math.abs(helium[i].x_pos - helium[j].x_pos) + Math.abs(helium[i].y_pos - helium[j].y_pos)) <= interaction_range_squared;
+                            jk = (Math.abs(helium[j].x_pos - helium[k].x_pos) + Math.abs(helium[j].y_pos - helium[k].y_pos)) <= interaction_range_squared;
+                            ki = (Math.abs(helium[k].x_pos - helium[i].x_pos) + Math.abs(helium[k].y_pos - helium[i].y_pos)) <= interaction_range_squared;
+
+
+                            if (ij && jk && ki) {
+                                carbon.push({
+                                    x_pos: (helium[i].x_pos + helium[j].x_pos + helium[k].x_pos) / 3.0,
+                                    y_pos: (helium[i].y_pos + helium[j].y_pos + helium[k].y_pos) / 3.0,
+                                    x_vel: (helium[i].x_vel + helium[j].x_vel + helium[k].x_vel) / 3.0,
+                                    y_vel: (helium[i].y_vel + helium[j].y_vel + helium[k].y_vel) / 3.0
+                                });
+
+                                helium.splice(i, 1);
+                                helium.splice(j - 1, 1);
+                                helium.splice(k - 2, 1);
+
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function generate_new_particles() {
+        var multiplier = Number(document.getElementById("temp_input").value);
+        multiplier /= Number(document.getElementById("temp_input").max)
+
+        prod = Number(document.getElementById("proton_production_input").value) * multiplier;
+        for (i = 0; i < prod; ++i) {
+            theta = random(0.0, 2.0 * Math.PI);
+
+            proton.push({
+                x_pos: random(0, 1),
+                y_pos: random(0, 1),
+                x_vel: Math.sin(theta),
+                y_vel: Math.cos(theta),
+            });
+        }
+
+        prod = Number(document.getElementById("deuterium_production_input").value) * multiplier;
+        for (i = 0; i < prod; ++i) {
+            theta = random(0.0, 2.0 * Math.PI);
+
+            deuterium.push({
+                x_pos: random(0, 1),
+                y_pos: random(0, 1),
+                x_vel: Math.sin(theta),
+                y_vel: Math.cos(theta),
+            });
+        }
+
+        prod = Number(document.getElementById("helium_production_input").value) * multiplier;
+        for (i = 0; i < prod; ++i) {
+            theta = random(0.0, 2.0 * Math.PI);
+
+            helium.push({
+                x_pos: random(0, 1),
+                y_pos: random(0, 1),
+                x_vel: Math.sin(theta),
+                y_vel: Math.cos(theta),
+            });
+        }
+
+        prod = Number(document.getElementById("carbon_production_input").value) * multiplier;
+        for (i = 0; i < prod; ++i) {
+            theta = random(0.0, 2.0 * Math.PI);
+
+            carbon.push({
+                x_pos: random(0, 1),
+                y_pos: random(0, 1),
+                x_vel: Math.sin(theta),
+                y_vel: Math.cos(theta),
+            });
+        }
+    }
+
+    function move_particles() {
+        var multiplier = Number(document.getElementById("temp_input").value);
+        multiplier /= temp_max;
+        multiplier /= 1E2;
+
+        for (i = 0; i < proton.length; ++i) {
+            proton[i].x_pos += proton[i].x_vel * multiplier;
+            proton[i].y_pos += proton[i].y_vel * multiplier;
+
+            if ((proton[i].x_pos < 0) || (proton[i].x_pos >= 1) || (proton[i].y_pos < 0) || (proton[i].y_pos >= 1)) {
+                proton.splice(i, 1);
+            }
+        }
+        for (i = 0; i < deuterium.length; ++i) {
+            deuterium[i].x_pos += deuterium[i].x_vel * multiplier;
+            deuterium[i].y_pos += deuterium[i].y_vel * multiplier;
+
+            if ((deuterium[i].x_pos < 0) || (deuterium[i].x_pos >= 1) || (deuterium[i].y_pos < 0) || (deuterium[i].y_pos >= 1)) {
+                deuterium.splice(i, 1);
+            }
+        }
+        for (i = 0; i < helium.length; ++i) {
+            helium[i].x_pos += helium[i].x_vel * multiplier;
+            helium[i].y_pos += helium[i].y_vel * multiplier;
+
+            if ((helium[i].x_pos < 0) || (helium[i].x_pos >= 1) || (helium[i].y_pos < 0) || (helium[i].y_pos >= 1)) {
+                helium.splice(i, 1);
+            }
+        }
+        for (i = 0; i < carbon.length; ++i) {
+            carbon[i].x_pos += carbon[i].x_vel * multiplier;
+            carbon[i].y_pos += carbon[i].y_vel * multiplier;
+
+            if ((carbon[i].x_pos < 0) || (carbon[i].x_pos >= 1) || (carbon[i].y_pos < 0) || (carbon[i].y_pos >= 1)) {
+                carbon.splice(i, 1);
+            }
+        }
+    }
+
+    function count_particles() {
+        var proton_count_ave = 0;
+        for (i = 0; i < 100; ++i) {
+            proton_count_ave += proton_count[proton_count.length - 1 - i];
+        }
+        proton_count_ave /= 100;
+        document.getElementById("num_proton_text").innerHTML = proton_count_ave;
+        if ((proton_count_ave >= target_proton_count) && (proton_tick < 0)) {
+            document.getElementById("target_proton_text").innerHTML = num_tick;
+            proton_tick = num_tick;
+        }
+
+        var proton_rate_ave = 0;
+        for (i = 0; i < 99; ++i) {
+            proton_rate_ave += proton_count[i + 1] - proton_count[i];
+        }
+        proton_rate_ave /= 99;
+        document.getElementById("rate_proton_text").innerHTML = Math.round(proton_rate_ave * 100) / 100;
+
+        var deuterium_count_ave = 0;
+        for (i = 0; i < 100; ++i) {
+            deuterium_count_ave += deuterium_count[deuterium_count.length - 1 - i];
+        }
+        deuterium_count_ave /= 100;
+        document.getElementById("num_deuterium_text").innerHTML = deuterium_count_ave;
+        if ((deuterium_count_ave >= target_deuterium_count) && (deuterium_tick < 0)) {
+            document.getElementById("target_deuterium_text").innerHTML = num_tick;
+            deuterium_tick = num_tick;
+        }
+
+        var deuterium_rate_ave = 0;
+        for (i = 0; i < 99; ++i) {
+            deuterium_rate_ave += deuterium_count[i + 1] - deuterium_count[i];
+        }
+        deuterium_rate_ave /= 99;
+        document.getElementById("rate_deuterium_text").innerHTML = Math.round(deuterium_rate_ave * 100) / 100;
+
+        var helium_count_ave = 0;
+        for (i = 0; i < 100; ++i) {
+            helium_count_ave += helium_count[helium_count.length - 1 - i];
+        }
+        helium_count_ave /= 100;
+        document.getElementById("num_helium_text").innerHTML = helium_count_ave;
+        if ((helium_count_ave >= target_helium_count) && (helium_tick < 0)) {
+            document.getElementById("target_helium_text").innerHTML = num_tick;
+            helium_tick = num_tick;
+        }
+
+        var helium_rate_ave = 0;
+        for (i = 0; i < 99; ++i) {
+            helium_rate_ave += helium_count[i + 1] - helium_count[i];
+        }
+        helium_rate_ave /= 99;
+        document.getElementById("rate_helium_text").innerHTML = Math.round(helium_rate_ave * 100) / 100;
+
+        var carbon_count_ave = 0;
+        for (i = 0; i < 100; ++i) {
+            carbon_count_ave += carbon_count[carbon_count.length - 1 - i];
+        }
+        carbon_count_ave /= 100;
+        document.getElementById("num_carbon_text").innerHTML = carbon_count_ave;
+        if ((carbon_count_ave >= target_carbon_count) && (carbon_tick < 0)) {
+            document.getElementById("target_carbon_text").innerHTML = num_tick;
+            carbon_tick = num_tick;
+        }
+
+        var carbon_rate_ave = 0;
+        for (i = 0; i < 99; ++i) {
+            carbon_rate_ave += carbon_count[i + 1] - carbon_count[i];
+        }
+        carbon_rate_ave /= 99;
+        document.getElementById("rate_carbon_text").innerHTML = Math.round(carbon_rate_ave * 100) / 100;
+
+        if ((num_tick % 10) == 0) {
+            proton_count.shift();
+            proton_count.push(proton.length);
+            carbon_count.shift();
+            carbon_count.push(carbon.length);
+            helium_count.shift();
+            helium_count.push(helium.length);
+            deuterium_count.shift();
+            deuterium_count.push(deuterium.length);
+        }
+    }
+</script>
+
+</html>
